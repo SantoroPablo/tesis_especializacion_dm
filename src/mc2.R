@@ -3,14 +3,11 @@ rm(list = ls())
 gc()
 
 #### Libraries ####
-library("tidyverse")
-library("lubridate")
-library("robust")
-library("xts")
-library("mgcv")
-library("nlme")
-library("RColorBrewer")
-library("plotly")
+setwd('/home/pablo/org/estudios/dm/mat/tesis/')
+source('functions/loadlib.R')
+libraries = c('tidyverse', 'lubridate', 'robust', 'xts', 'mgcv', 'nlme', 'RColorBrewer', 'plotly')
+for (i in libraries) loadlib(i)
+rm('i', 'libraries')
 
 #### Variables ####
 readings = "/home/pablo/org/estudios/dm/mat/vinfo/vast_challenge/MC2/data/Boonsong Lekagul waterways readings.csv"
@@ -20,13 +17,15 @@ units    = "/home/pablo/org/estudios/dm/mat/vinfo/vast_challenge/MC2/data/chemic
 data.readings = read_csv(readings, locale = locale(encoding = "latin1"))
 data.units    = read_csv(units, locale = locale(encoding = "latin1"))
 
+# uniendo con las unidades de medidas
 data.readings = data.readings %>% 
   left_join(data.units, by = "measure")
 
-data.readings[["sample date"]] = as.Date(data.readings[["sample date"]], format = "%d-%b-%y")
+data.readings[["sample date"]] = dmy(data.readings[["sample date"]])
 
+# Creando una variable de periodo
 data.readings = data.readings %>% 
-  mutate(mes  = formatC(month(`sample date`), width = 2, flag = 0, mode = "integer"),
+  mutate(mes  = str_pad(month(`sample date`), width = 2, pad = 0, side = "left"),
          year = year(`sample date`)) %>% 
   unite(col = "ym", year, mes, sep = "")
 
