@@ -17,21 +17,25 @@ units    = "/home/pablo/org/estudios/dm/mat/vinfo/vast_challenge/MC2/data/chemic
 data.readings = read_csv(readings, locale = locale(encoding = "latin1"))
 data.units    = read_csv(units, locale = locale(encoding = "latin1"))
 
+#### Program ####
 # uniendo con las unidades de medidas
 data.readings = data.readings %>% 
   left_join(data.units, by = "measure")
 
 data.readings[["sample date"]] = dmy(data.readings[["sample date"]])
 
-# Creando una variable de periodo
+# Creando una variable de periodo: monthyear
 data.readings = data.readings %>% 
   mutate(mes  = str_pad(month(`sample date`), width = 2, pad = 0, side = "left"),
          year = year(`sample date`)) %>% 
   unite(col = "ym", year, mes, sep = "")
 
-# Measures
+# Medidas
 sort(unique(data.readings[["measure"]]))
+sort(unique(data.readings[["measure"]])) %>% length(.) # 106 variables en total
 
+# Cantidad de muestras por mes de methylosmoline por estación
+# El methylosmoline es, supuestamente, el químico que mayormente afecta al pipit.
 data.readings %>% 
   filter(measure == "Methylosmoline") %>% 
   group_by(location, ym) %>% 
