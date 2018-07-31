@@ -3,22 +3,21 @@ rm(list = ls())
 gc()
 
 #### Libraries ####
-setwd('/home/pablo/org/estudios/dm/mat/tesis/')
 source('functions/loadlib.R')
 libraries = c('tidyverse', 'lubridate', 'robust', 'xts', 'mgcv', 'nlme', 'RColorBrewer', 'plotly')
 for (i in libraries) loadlib(i)
 rm('i', 'libraries')
 
 #### Variables ####
-readings = "/home/pablo/org/estudios/dm/mat/vinfo/vast_challenge/MC2/data/Boonsong Lekagul waterways readings.csv"
-units    = "/home/pablo/org/estudios/dm/mat/vinfo/vast_challenge/MC2/data/chemical units of measure.csv"
+readings = "data/Boonsong Lekagul waterways readings.csv"
+units    = "data/chemical units of measure.csv"
 
 #### Datasets ####
 data.readings = read_csv(readings, locale = locale(encoding = "latin1"))
 data.units    = read_csv(units, locale = locale(encoding = "latin1"))
 
 #### Program ####
-# uniendo con las unidades de medidas
+# Uniendo con las unidades de medidas
 data.readings = data.readings %>% 
   left_join(data.units, by = "measure")
 
