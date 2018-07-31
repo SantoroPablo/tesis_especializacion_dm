@@ -1,0 +1,10 @@
+TODO list
+=========
+- Leer los capitulos 32 y 33 de 'Learn Vimscript the hard way' para poder entender mejor como armar el operador 'grep' en vim'
+- Estandarizar las variables para eliminar el efecto de las unidades de medida.
+- Chequear si puedo encontrar la estacionalidad de las variables, y hacer feature engineering descomponiendo las series. Ejemplo: la temperatura del agua es super estacional.
+- Armar regresiones entre variables, para ver si puedo inferir el valor de variables no muestreadas en algun intervalo de tiempo a partir de otras.
+- Armar cluster de variables para detectar las variables que se mueven juntas.
+- Armar regresion robusta y extraer los 'scores' de los registros que usa, como metodo de deteccion de outliers.
+- Armar un resumen de medidas y algunos graficos para mostrar un poco el problema al que nos hemos enfrentado. Usar las visualizaciones de la herramienta. Subir el pdf al github y añadir link como referencia al mismo.
+
