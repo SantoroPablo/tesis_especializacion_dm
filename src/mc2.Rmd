@@ -1,0 +1,111 @@
+---
+title: "Visualization of measures in the park's waterways"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library("flexdashboard")
+library("tidyverse")
+library("lubridate")
+library("robust")
+library("xts")
+library("mgcv")
+library("nlme")
+library("RColorBrewer")
+library("plotly")
+```
+
+```{r global, include=FALSE}
+mc2.path = "/home/pablo/org/estudios/dm/mat/vinfo/vast_challenge/MC2/"
+readings = "data/Boonsong Lekagul waterways readings.csv"
+units    = "data/chemical units of measure.csv"
+
+data.readings = read_csv(paste0(mc2.path, readings), locale = locale(encoding = "latin1"))
+data.units    = read_csv(paste0(mc2.path, units), locale = locale(encoding = "latin1"))
+
+names(data.readings)[4] = "date"
+
+data.readings = data.readings %>% 
+  left_join(data.units, by = "measure")
+
+data.readings[["date"]] = as.Date(data.readings[["date"]], format = "%d-%b-%y")
+
+data.readings = data.readings %>% 
+  mutate(mes  = formatC(month(date), width = 2, flag = 0, mode = "integer"),
+         year = year(date)) %>% 
+  unite(col = "ym", year, mes, sep = "")
+
+spread.data.mean = data.readings %>% 
+  select(-id) %>% 
+  group_by(location, date, measure) %>% 
+  summarise(value = mean(value, na.rm = TRUE)) %>% 
+  spread(key = c("measure"), value = "value") 
+
+spread.vars = data.readings %>% 
+  group_by(date, measure, location) %>%
+  summarise(cuenta = n(),
+            media = mean(value),
+            mediana = median(value),
+            maximo = max(value),
+            minimo = min(value))
+```
+
+Column {.sidebar}
+-----------------------------------------------------------------------
+
+```{r}
+selectInput(inputId = "stations", label = "Stations",
+            choices = c("Boonsri", "Kohsoom", "Busarakhan", "Chai", "Kannika", "Achara", "Somchair", "Sakda", "Tansanee", "Decha"), selected = "Boonsri")
+
+selectInput(inputId = "measure", label = "Measure",
+            choices = data.units[[1]])
+
+sliderInput(inputId = "range_date", label = "Range dates",
+            min = min(data.readings[["date"]]), max = max(data.readings[["date"]]), value = as.Date(c("1998-01-01", "2016-12-31")))
+
+sliderInput(inputId = "range_value", label = "Range values",
+            min = min(data.readings[["value"]]), max = max(data.readings[["value"]]), value = c(1, 10), step = 0.01)
+```
+
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Chart A
+
+![Mapa](/home/pablo/org/estudios/dm/mat/vinfo/vast_challenge/MC2/data/WaterwaysFinal_cortado.jpg)
+
+```{r}
+
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Scatterplot
+
+```{r}
+dataset = reactive(data.readings[data.readings[["location"]] == input$stations & data.readings[["measure"]] == input$measure &
+                                   as.Date(data.readings[["date"]]) %within% interval(ymd(input$range_date[1]), ymd(input$range_date[2])), c("date", "value")])
+renderPlot({
+  dataset() %>%
+    ggplot(., aes(x = date, y = value)) +
+    geom_point() +
+    geom_line() +
+    geom_smooth() +
+    theme_bw() +
+    scale_y_continuous(limits = input$range_value) +
+    labs(title = paste0(input$stations, " - " ,input$measure), x = "Time", y = "Values")
+})
+```
+
+### Chart C
+
+```{r}
+
+```
+

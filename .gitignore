@@ -1,2 +1,5 @@
+*.aux
+*.pdf
+*.log
 data/*
 functions/*
