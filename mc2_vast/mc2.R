@@ -3,6 +3,7 @@ rm(list = ls())
 gc()
 
 #### Libraries ####
+set.seed(123)
 source('functions/loadlib.R')
 libraries = c('tidyverse', 'lubridate', 'robust', 'xts', 'mgcv', 'nlme', 'RColorBrewer', 'plotly')
 for (i in libraries) loadlib(i)
@@ -76,12 +77,26 @@ data.month = data.readings %>%
               median_val = median(value, na.rm = TRUE),
               std_err = sd(value, na.rm = TRUE))
 
+data.year = data.readings %>% 
+  mutate(year_date = str_pad(string = year(sample_date), width = 2, pad = '0', side = 'left')) %>% 
+  group_by(year_date, location, measure) %>% 
+  summarise(avg_val = mean(value, na.rm = TRUE),
+            median_val = median(value, na.rm = TRUE),
+            std_err = sd(value, na.rm = TRUE))
+
+# Clustering sobre los meses. Aca, asi como esta, puedo ver como se agrupan las distintas estaciones en cuanto a su mediana
+# Pruebo hacer un cluster por meses por estacion, usando los quimicos como variable
 data.month.wide = data.month %>%
     select(measure, location, monthyear, median_val) %>%
     spread(key = measure, value = median_val)
 
-# Clustering sobre los meses. Aca, asi como esta, puedo ver como se agrupan las distintas estaciones en cuanto a su mediana
-data.month.kmeans = kmeans(x = data.month.wide[, 3:ncol(data.month.wide)], centers = 2)
+data.year.wide = data.year %>%
+    select(measure, location, year_date, median_val) %>%
+    spread(key = measure, value = median_val)
+
+# K-means da error porque hay muchos huecos entre variables medidas en el tiempo, y huecos temporales al interior de cada variable también
+
+# TODO: ¿Se puede detectar anomalias sin tener en cuenta la variable del tiempo?
 
 # Poniendo las variables como columnas, en vez de key-value
 spread.data = spread(data = data.readings, key = c("sample_date", "measure"), value = "value") 
