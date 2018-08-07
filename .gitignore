@@ -1,13 +1,10 @@
-<<<<<<< HEAD
 .Rproj.user
 .Rhistory
 .RData
 .Ruserdata
-=======
 *.aux
 *.pdf
 *.log
 *.sw*
 data/*
 functions/*
->>>>>>> 58be59453aa6ec856d0668ba5b60e4e5673e09cf
