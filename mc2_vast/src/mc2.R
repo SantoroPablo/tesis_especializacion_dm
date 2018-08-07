@@ -3,31 +3,55 @@ rm(list = ls())
 gc()
 
 #### Libraries ####
-setwd('/home/pablo/org/estudios/dm/mat/tesis/')
+set.seed(123)
 source('functions/loadlib.R')
-libraries = c('tidyverse', 'lubridate', 'robust', 'xts', 'mgcv', 'nlme', 'RColorBrewer', 'plotly')
+libraries = c('tidyverse', 'lubridate', 'robust', 'xts', 'mgcv', 'nlme', 'RColorBrewer', 'plotly', "cluster")
 for (i in libraries) loadlib(i)
 rm('i', 'libraries')
 
+#### Functions ####
+procesar_clusters = function(dataset, clus_opt = "kmeans", rango_clus = 1:10, iter_max = 50) {
+  if(clus_opt == "kmeans") {
+    silh_list_ext = list()
+    silh_avgwidth_ext = array()
+    for (i in rango_clus) {
+      print(i) #esto es para ir monitoreando el avance cuando corre
+      modelo = kmeans(dataset, centers = i+1, algorithm = "MacQueen",
+                          iter.max = iter_max) #calculo el kmeans
+      # i          =  i + 10*(j-1) #esto es una correccion que le hago al i para que no se me sobreescriban en la lista. Esta funcion en j=2 vale 10, en j=3 vale 20 y as?
+      distancias = dist(dataset, "euclidean")
+      silh_list_ext[[i]] = silhouette(modelo$cluster, distancias) #guarda en una lista el silhouette
+      silh_avgwidth_ext[i]   = summary(silh_list_ext[[i]])[["avg.width"]] #guarda el silhouette promedio
+    }
+  } else {
+    stop("Por ahora solo kmeans es el unico algoritmo implementado")
+    return(-1)
+  }
+  return(data_frame(silhouette_promedio = silh_avgwidth_ext,
+                      cant_clusters = rango_clus+1))
+}
+
 #### Variables ####
-readings = "/home/pablo/org/estudios/dm/mat/vinfo/vast_challenge/MC2/data/Boonsong Lekagul waterways readings.csv"
-units    = "/home/pablo/org/estudios/dm/mat/vinfo/vast_challenge/MC2/data/chemical units of measure.csv"
+readings = "data/Boonsong Lekagul waterways readings.csv"
+units    = "data/chemical units of measure.csv"
 
 #### Datasets ####
 data.readings = read_csv(readings, locale = locale(encoding = "latin1"))
 data.units    = read_csv(units, locale = locale(encoding = "latin1"))
+
+data.readings = rename(data.readings, "sample_date" = "sample date")
 
 #### Program ####
 # uniendo con las unidades de medidas
 data.readings = data.readings %>% 
   left_join(data.units, by = "measure")
 
-data.readings[["sample date"]] = dmy(data.readings[["sample date"]])
+data.readings[["sample_date"]] = dmy(data.readings[["sample_date"]])
 
 # Creando una variable de periodo: monthyear
 data.readings = data.readings %>% 
-  mutate(mes  = str_pad(month(`sample date`), width = 2, pad = 0, side = "left"),
-         year = year(`sample date`)) %>% 
+  mutate(mes  = str_pad(month(`sample_date`), width = 2, pad = 0, side = "left"),
+         year = year(`sample_date`)) %>% 
   unite(col = "ym", year, mes, sep = "")
 
 # Medidas
@@ -53,9 +77,9 @@ boxplot(data.readings$value[data.readings$measure == "Methylosmoline"] ~ data.re
 # Methylosmoline
 data.readings %>% 
   filter(measure == "Methylosmoline") %>% 
-  group_by(`sample date`, location, measure) %>% 
+  group_by(`sample_date`, location, measure) %>% 
   transmute(value = mean(value)) %>% 
-  ggplot(data = ., aes(x = `sample date`, y = value, color = location)) +
+  ggplot(data = ., aes(x = `sample_date`, y = value, color = location)) +
   geom_point() +
   geom_line() +
   scale_y_continuous(breaks = seq(0, 150, by = 15)) +
@@ -63,32 +87,52 @@ data.readings %>%
   theme_bw() +
   labs(title = "Methylosmoline", x = "Fecha", y = "Promedio de valores de concentración (µg/l)")
 
-data.readings %>% 
-  filter(measure == "p,p-DDT") %>% 
-  group_by(`sample date`, location, measure) %>% 
-  transmute(value = mean(value)) %>% 
-  ggplot(data = ., aes(x = `sample date`, y = value, color = location)) +
-  geom_point() +
-  geom_line() +
-  theme_bw() +
-  scale_y_continuous(breaks = seq(0, 2, by = 0.2)) +
-  scale_color_brewer(type = "qual", palette = "Paired") +
-  labs(title = "p,p-DDT", x = "Fecha", y = "Promedio de valores de concentración (µg/l)")
+linear.model  = lm(data = data.readings[data.readings[["measure"]] == "Methylosmoline", ], value ~ `sample_date`)
+rlinear.model = robust::lmRob(data = data.readings[data.readings[["measure"]] == "Methylosmoline", ], value ~ `sample_date`)
 
-data.readings %>% 
-  filter(measure == "p,p-DDE") %>% 
-  ggplot(data = ., aes(x = `sample date`, y = value, color = location)) +
-  geom_point() +
-  geom_line()
+# TODO: tomar la media y la mediana por mes entre las variables en total y por estacion, para ver cambios en el parque.
+data.month = data.readings %>%
+    mutate(month_date = str_pad(string = month(sample_date), width = 2, pad = '0', side = 'left'),
+           monthyear  = paste0(year(sample_date), month_date)) %>%
+    group_by(monthyear, location, measure) %>%
+    summarise(avg_val = mean(value, na.rm = TRUE),
+              median_val = median(value, na.rm = TRUE),
+              std_err = sd(value, na.rm = TRUE))
 
-linear.model  = lm(data = data.readings[data.readings[["measure"]] == "p,p-DDT", ], value ~ `sample date`)
-rlinear.model = robust::lmRob(data = data.readings[data.readings[["measure"]] == "p,p-DDT", ], value ~ `sample date`)
+# TODO: lo que habría que hacer es clusterizar por variable y por estacion. Solamente asi se pueden detectar outliers entre las estaciones
+# Por ejemplo, clusterizando para Methylosmoline
+subset.methyl.kohsoom = data.month[data.month[["location"]] == "Kohsoom" & data.month[["measure"]] == "Methylosmoline", "median_val"]
+kmeans1 = procesar_clusters(dataset = subset.methyl.kohsoom)
 
-plot(x = data.readings[['']][data.readings[['measure']] == 'p,p-DDT'],
-     y = data.readings[['value']][data.readings[['measure']] == 'p,p-DDT'])
+# Alrededor de 4 son los clusters que me da con silhouette alto
+dist.methyl.kohsoom  = dist(subset.methyl.kohsoom, method = "euclidean")
+model.methyl.kohsoom = kmeans(subset.methyl.kohsoom, centers = 4, iter.max = 50, algorithm = "MacQueen")
 
-spread.data = spread(data = data.readings, key = c("sample date", "measure"), value = "value") 
+# Silhouette de este metodo
+silhouette(x = model.methyl.kohsoom$cluster, dist.methyl.kohsoom)
 
+data.year = data.readings %>% 
+  mutate(year_date = str_pad(string = year(sample_date), width = 2, pad = '0', side = 'left')) %>% 
+  group_by(year_date, location, measure) %>% 
+  summarise(avg_val = mean(value, na.rm = TRUE),
+            median_val = median(value, na.rm = TRUE),
+            std_err = sd(value, na.rm = TRUE))
+
+# Clustering sobre los meses. Aca, asi como esta, puedo ver como se agrupan las distintas estaciones en cuanto a su mediana
+# Pruebo hacer un cluster por meses por estacion, usando los quimicos como variable
+data.month.wide = data.month %>%
+    select(measure, location, monthyear, median_val) %>%
+    spread(key = measure, value = median_val)
+
+data.year.wide = data.year %>%
+    select(measure, location, year_date, median_val) %>%
+    spread(key = measure, value = median_val)
+
+# K-means da error porque hay muchos huecos entre variables medidas en el tiempo, y huecos temporales al interior de cada variable también
+
+
+# Poniendo las variables como columnas, en vez de key-value
+spread.data = spread(data = data.readings, key = c("sample_date", "measure"), value = "value") 
 # Frecuencia de muestreo de las variables
 names(data.readings)[4] = "date"
 
@@ -100,7 +144,7 @@ spread.vars = data.readings %>%
             maximo = max(value),
             minimo = min(value))
 
-spread.vars2 = data.readings %>%
+spread.vars = data.readings %>%
   spread(measure, value)
 
 table(spread.vars$cuenta)
