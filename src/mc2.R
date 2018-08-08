@@ -10,7 +10,6 @@ for (i in libraries) loadlib(i)
 rm('i', 'libraries')
 
 #### Functions ####
-<<<<<<< HEAD:mc2_vast/src/mc2.R
 procesar_clusters = function(dataset, clus_opt = "kmeans", rango_clus = 1:10, iter_max = 50) {
   if(clus_opt == "kmeans") {
     silh_list_ext = list()
@@ -24,27 +23,14 @@ procesar_clusters = function(dataset, clus_opt = "kmeans", rango_clus = 1:10, it
       silh_list_ext[[i]] = silhouette(modelo$cluster, distancias) #guarda en una lista el silhouette
       silh_avgwidth_ext[i]   = summary(silh_list_ext[[i]])[["avg.width"]] #guarda el silhouette promedio
     }
-  } else {
+  }
+  else {
     stop("Por ahora solo kmeans es el unico algoritmo implementado")
     return(-1)
   }
   return(data_frame(silhouette_promedio = silh_avgwidth_ext,
                       cant_clusters = rango_clus+1))
-=======
-procesar_clusters = function(dataset, clus_opt = "kmeans", rango_clus = 1:10) {
-    if(clus_opt == "kmeans") {
-        for (i in rango_clus) {
-            print(i) #esto es para ir monitoreando el avance cuando corre
-            glx_kmeans = kmeans(glx_clu_mue, centers = i+1, algorithm = "MacQueen") #calculo el kmeans
-            i          =  i + 10*(j-1) #esto es una correccion que le hago al i para que no se me sobreescriban en la lista. Esta funcion en j=2 vale 10, en j=3 vale 20 y as?
-            glx_silh_list_ext[[i]] = silhouette(glx_kmeans$cluster, glx_eucl) #guarda en una lista el silhouette
-            silh_avgwidth_ext[i]   = summary(glx_silh_list_ext[[i]])[["avg.width "]] #guarda el silhouette promedio
-        }
-    } else {
-        stop("Por ahora solo kmeans es el unico algoritmo implementado")
-    }
->>>>>>> 58be59453aa6ec856d0668ba5b60e4e5673e09cf:src/mc2.R
-}
+  }
 
 #### Variables ####
 readings = "data/Boonsong Lekagul waterways readings.csv"
@@ -58,15 +44,15 @@ data.readings = rename(data.readings, "sample_date" = "sample date")
 
 #### Program ####
 # uniendo con las unidades de medidas
-data.readings = data.readings %>% 
+data.readings = data.readings %>%
   left_join(data.units, by = "measure")
 
 data.readings[["sample_date"]] = dmy(data.readings[["sample_date"]])
 
 # Creando una variable de periodo: monthyear
-data.readings = data.readings %>% 
+data.readings = data.readings %>%
   mutate(mes  = str_pad(month(`sample_date`), width = 2, pad = 0, side = "left"),
-         year = year(`sample_date`)) %>% 
+         year = year(`sample_date`)) %>%
   unite(col = "ym", year, mes, sep = "")
 
 # Medidas
@@ -75,11 +61,11 @@ sort(unique(data.readings[["measure"]])) %>% length(.) # 106 variables en total
 
 # Cantidad de muestras por mes de methylosmoline por estación
 # El methylosmoline es, supuestamente, el químico que mayormente afecta al pipit.
-data.readings %>% 
-  filter(measure == "Methylosmoline") %>% 
-  group_by(location, ym) %>% 
+data.readings %>%
+  filter(measure == "Methylosmoline") %>%
+  group_by(location, ym) %>%
   summarise(value = sum(value),
-            cuenta = n()) %>% 
+            cuenta = n()) %>%
   ggplot(data = ., aes(x = ym, y = location, fill = cuenta)) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
@@ -90,10 +76,10 @@ data.readings %>%
 boxplot(data.readings$value[data.readings$measure == "Methylosmoline"] ~ data.readings$location[data.readings$measure == "Methylosmoline"])
 
 # Methylosmoline
-data.readings %>% 
-  filter(measure == "Methylosmoline") %>% 
-  group_by(`sample_date`, location, measure) %>% 
-  transmute(value = mean(value)) %>% 
+data.readings %>%
+  filter(measure == "Methylosmoline") %>%
+  group_by(`sample_date`, location, measure) %>%
+  transmute(value = mean(value)) %>%
   ggplot(data = ., aes(x = `sample_date`, y = value, color = location)) +
   geom_point() +
   geom_line() +
@@ -116,7 +102,6 @@ data.month = data.readings %>%
 
 # TODO: lo que habría que hacer es clusterizar por variable y por estacion. Solamente asi se pueden detectar outliers entre las estaciones
 # Por ejemplo, clusterizando para Methylosmoline
-<<<<<<< HEAD:mc2_vast/src/mc2.R
 subset.methyl.kohsoom = data.month[data.month[["location"]] == "Kohsoom" & data.month[["measure"]] == "Methylosmoline", "median_val"]
 kmeans1 = procesar_clusters(dataset = subset.methyl.kohsoom)
 
@@ -126,13 +111,10 @@ model.methyl.kohsoom = kmeans(subset.methyl.kohsoom, centers = 4, iter.max = 50,
 
 # Silhouette de este metodo
 silhouette(x = model.methyl.kohsoom$cluster, dist.methyl.kohsoom)
-=======
-kmeans1 = kmeans()
->>>>>>> 58be59453aa6ec856d0668ba5b60e4e5673e09cf:src/mc2.R
 
-data.year = data.readings %>% 
-  mutate(year_date = str_pad(string = year(sample_date), width = 2, pad = '0', side = 'left')) %>% 
-  group_by(year_date, location, measure) %>% 
+data.year = data.readings %>%
+  mutate(year_date = str_pad(string = year(sample_date), width = 2, pad = '0', side = 'left')) %>%
+  group_by(year_date, location, measure) %>%
   summarise(avg_val = mean(value, na.rm = TRUE),
             median_val = median(value, na.rm = TRUE),
             std_err = sd(value, na.rm = TRUE))
@@ -142,15 +124,6 @@ data.year = data.readings %>%
 data.month.wide = data.month %>%
     select(measure, location, monthyear, median_val) %>%
     spread(key = measure, value = median_val)
-<<<<<<< HEAD:mc2_vast/src/mc2.R
-
-data.year.wide = data.year %>%
-    select(measure, location, year_date, median_val) %>%
-    spread(key = measure, value = median_val)
-
-# K-means da error porque hay muchos huecos entre variables medidas en el tiempo, y huecos temporales al interior de cada variable también
-
-=======
 
 data.year.wide = data.year %>%
     select(measure, location, year_date, median_val) %>%
@@ -161,15 +134,14 @@ data.year.wide = data.year %>%
 # TODO: ¿Se puede detectar anomalias sin tener en cuenta la variable del tiempo?
 
 # Poniendo las variables como columnas, en vez de key-value
-spread.data = spread(data = data.readings, key = c("sample_date", "measure"), value = "value") 
->>>>>>> 58be59453aa6ec856d0668ba5b60e4e5673e09cf:src/mc2.R
+spread.data = spread(data = data.readings, key = c("sample_date", "measure"), value = "value")
 
 # Poniendo las variables como columnas, en vez de key-value
-spread.data = spread(data = data.readings, key = c("sample_date", "measure"), value = "value") 
+spread.data = spread(data = data.readings, key = c("sample_date", "measure"), value = "value")
 # Frecuencia de muestreo de las variables
 names(data.readings)[4] = "date"
 
-spread.vars = data.readings %>% 
+spread.vars = data.readings %>%
   group_by(date, measure, location) %>%
   summarise(cuenta = n(),
             media = mean(value),
@@ -183,25 +155,25 @@ spread.vars = data.readings %>%
 table(spread.vars$cuenta)
 
 # Tratando de normalizar todas las variables entre 0 y 1.
-split.data.readings = data.readings %>% 
-  group_by(measure) %>% 
+split.data.readings = data.readings %>%
+  group_by(measure) %>%
   mutate(normalizedValue = (value - min(value)) / max(value))
 
 split.data.readings[["normalizedValue"]][is.na(split.data.readings[["normalizedValue"]])] = 0 # El berilio da siempre cero. Lo imputo a cero, por ende
 
 # Habiendo normalizado las variables, quiero fijarme si hay un aumento generalizado del promedio de mediciones en algún momento del tiempo por estación.
 
-split.data.readings %>% 
-  group_by(location, date) %>% 
-  summarise(valores = mean(normalizedValue)) %>% 
+split.data.readings %>%
+  group_by(location, date) %>%
+  summarise(valores = mean(normalizedValue)) %>%
   ggplot(aes(x = date, y = valores, colour = location)) +
   geom_line() +
   labs(title = "Mediciones en el tiempo por estación", x = "Fecha", y = "Valores")
 
 # Separando las estaciones para mayor claridad
-split.data.readings %>% 
-  group_by(location, date) %>% 
-  summarise(valores = mean(normalizedValue)) %>% 
+split.data.readings %>%
+  group_by(location, date) %>%
+  summarise(valores = mean(normalizedValue)) %>%
   ggplot(aes(x = date, y = valores)) +
   geom_line() +
   theme_bw() +
@@ -212,7 +184,7 @@ split.data.readings %>%
 
 # Medidas por año
 graph = data.readings %>%
-  filter(measure == "Water temperature") %>% 
+  filter(measure == "Water temperature") %>%
   ggplot(aes(x = as.character(year(date)), y = value)) +
   theme_bw() +
   geom_boxplot() +
@@ -223,7 +195,7 @@ graph
 
 # "Iron" parece tener un problema en el año 2003.
 graph = data.readings %>%
-  filter(measure == "Iron") %>% 
+  filter(measure == "Iron") %>%
   ggplot(aes(x = as.character(year(date)), y = value)) +
   theme_bw() +
   geom_boxplot() +
@@ -234,7 +206,7 @@ graph
 
 # Si saco ese año del ploteo
 graph = data.readings %>%
-  filter(measure == "Iron" & year(date) != 2003) %>% 
+  filter(measure == "Iron" & year(date) != 2003) %>%
   ggplot(aes(x = as.character(year(date)), y = value)) +
   theme_bw() +
   geom_boxplot() +
@@ -247,7 +219,7 @@ graph
 # ¿Puede ser que Iron tenga, en el 2003, un problema sencillo de puntos y comas (separadores decimales y de miles)?
 
 graph = data.readings %>%
-  filter(measure == "Methylosmoline" & year(date) != 2003) %>% 
+  filter(measure == "Methylosmoline" & year(date) != 2003) %>%
   ggplot(aes(x = as.character(year(date)), y = value)) +
   theme_bw() +
   geom_boxplot() +
