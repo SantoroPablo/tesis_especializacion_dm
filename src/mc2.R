@@ -126,7 +126,11 @@ data.year = data.readings %>%
 kmeans3 = procesar_clusters(dataset = data.year[, 'median_val'], rango_clus = 1:14)
 
 # Parece que no es exactamente lo que estoy probando, habria que modificarlo.
-
+# TODO: hay que armar una prediccion de valores en base a la historia. Tiene que evitar problemas como el tema de que se agreguen ceros
+# TODO: tambien pueden armarse clusters entre variables en una locacion, o entre variablse de distintas locaciones de, por ejemplo, una misma cuenca.
+# TODO: Como herramienta, estaria bueno que puedan manipularse las estaciones por cuenca.
+# TODO: Lo que voy a intentar hacer es armar una prediccion de outliers basado en el rango de las variables
+# TODO: tendria que aceptar tambien el input del investigador, por medicion, por lugar y por momento en el tiempo, ya que los rangos aceptados deberian poder cambiar
 
 # Clustering sobre los meses. Aca, asi como esta, puedo ver como se agrupan las distintas estaciones en cuanto a su mediana
 # Pruebo hacer un cluster por meses por estacion, usando los quimicos como variable
