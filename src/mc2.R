@@ -5,18 +5,18 @@ gc()
 #### Libraries ####
 set.seed(123)
 source('functions/loadlib.R')
-libraries = c('tidyverse', 'lubridate', 'robust', 'xts', 'mgcv', 'nlme', 'RColorBrewer', 'plotly', "cluster")
+libraries = c('tidyverse', 'lubridate', 'robust', 'xts', 'mgcv', 'nlme', 'RColorBrewer', 'plotly', 'cluster', 'factoextra')
 for (i in libraries) loadlib(i)
 rm('i', 'libraries')
 
 #### Functions ####
 procesar_clusters = function(dataset, clus_opt = "kmeans", rango_clus = 1:10, iter_max = 50) {
-  if(clus_opt == "kmeans") {
+  if (clus_opt == "kmeans") {
     silh_list_ext = list()
     silh_avgwidth_ext = array()
     for (i in rango_clus) {
       print(i) #esto es para ir monitoreando el avance cuando corre
-      modelo = kmeans(dataset, centers = i+1, algorithm = "MacQueen",
+      modelo = kmeans(dataset, centers = i + 1, algorithm = "MacQueen",
                           iter.max = iter_max) #calculo el kmeans
       # i          =  i + 10*(j-1) #esto es una correccion que le hago al i para que no se me sobreescriban en la lista. Esta funcion en j=2 vale 10, en j=3 vale 20 y as?
       distancias = dist(dataset, "euclidean")
@@ -29,7 +29,7 @@ procesar_clusters = function(dataset, clus_opt = "kmeans", rango_clus = 1:10, it
     return(-1)
   }
   return(data_frame(silhouette_promedio = silh_avgwidth_ext,
-                      cant_clusters = rango_clus+1))
+                      cant_clusters = rango_clus + 1))
   }
 
 #### Variables ####
@@ -51,13 +51,13 @@ data.readings[["sample_date"]] = dmy(data.readings[["sample_date"]])
 
 # Creando una variable de periodo: monthyear
 data.readings = data.readings %>%
-  mutate(mes  = str_pad(month(`sample_date`), width = 2, pad = 0, side = "left"),
-         year = year(`sample_date`)) %>%
+  mutate(mes  = str_pad(month(sample_date), width = 2, pad = 0, side = "left"),
+         year = year(sample_date)) %>%
   unite(col = "ym", year, mes, sep = "")
 
 # Medidas
 sort(unique(data.readings[["measure"]]))
-sort(unique(data.readings[["measure"]])) %>% length(.) # 106 variables en total
+sort(unique(data.readings[["measure"]])) %>% length() # 106 variables en total
 
 # Cantidad de muestras por mes de methylosmoline por estación
 # El methylosmoline es, supuestamente, el químico que mayormente afecta al pipit.
@@ -119,12 +119,25 @@ model.methyl.kohsoom = kmeans(subset.methyl.kohsoom, centers = 4, iter.max = 50,
 # Silhouette de este metodo
 silhouette(x = model.methyl.kohsoom$cluster, dist.methyl.kohsoom)
 
+# Prueba el cluster que supongo que hizo Florencia
+kmeans2 = procesar_clusters(dataset = data.month[data.month[['measure']] == 'Total dissolved salts', 'median_val'], rango_clus = 1:14)
+
 data.year = data.readings %>%
   mutate(year_date = str_pad(string = year(sample_date), width = 2, pad = '0', side = 'left')) %>%
   group_by(year_date, location, measure) %>%
   summarise(avg_val = mean(value, na.rm = TRUE),
             median_val = median(value, na.rm = TRUE),
             std_err = sd(value, na.rm = TRUE))
+
+# Prueba el cluster que supongo que hizo Florencia
+kmeans3 = procesar_clusters(dataset = data.year[, 'median_val'], rango_clus = 1:14)
+
+# Parece que no es exactamente lo que estoy probando, habria que modificarlo.
+# TODO: hay que armar una prediccion de valores en base a la historia. Tiene que evitar problemas como el tema de que se agreguen ceros
+# TODO: tambien pueden armarse clusters entre variables en una locacion, o entre variablse de distintas locaciones de, por ejemplo, una misma cuenca.
+# TODO: Como herramienta, estaria bueno que puedan manipularse las estaciones por cuenca.
+# TODO: Lo que voy a intentar hacer es armar una prediccion de outliers basado en el rango de las variables
+# TODO: tendria que aceptar tambien el input del investigador, por medicion, por lugar y por momento en el tiempo, ya que los rangos aceptados deberian poder cambiar
 
 # Clustering sobre los meses. Aca, asi como esta, puedo ver como se agrupan las distintas estaciones en cuanto a su mediana
 # Pruebo hacer un cluster por meses por estacion, usando los quimicos como variable
