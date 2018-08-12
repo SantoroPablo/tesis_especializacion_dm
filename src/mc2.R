@@ -89,9 +89,8 @@ data.readings %>%
   labs(title = "Methylosmoline", x = "Fecha", y = "Promedio de valores de concentración (µg/l)")
 
 linear.model  = lm(data = data.readings[data.readings[["measure"]] == "Methylosmoline", ], value ~ `sample_date`)
-rlinear.model = robust::lmRob(data = data.readings[data.readings[["measure"]] == "Methylosmoline", ], value ~ `sample_date`)
+rlinear.model = robust::lmRob(data = data.readings[data.readings[["measure"]] == "Methylosmoline", ], value ~ sample_date)
 
-# TODO: tomar la media y la mediana por mes entre las variables en total y por estacion, para ver cambios en el parque.
 data.month = data.readings %>%
     mutate(month_date = str_pad(string = month(sample_date), width = 2, pad = '0', side = 'left'),
            monthyear  = paste0(year(sample_date), month_date)) %>%
@@ -99,6 +98,14 @@ data.month = data.readings %>%
     summarise(avg_val = mean(value, na.rm = TRUE),
               median_val = median(value, na.rm = TRUE),
               std_err = sd(value, na.rm = TRUE))
+
+# Tomo las variables de un ejemplo: una de las estaciones
+data.month.kohsoom = data.month %>%
+  filter(location == "Kohsoom") %>%
+  select(measure, median_val) %>%
+  spread(key = measure, value = median_val)
+
+data.month.kohsoom
 
 # TODO: lo que habría que hacer es clusterizar por variable y por estacion. Solamente asi se pueden detectar outliers entre las estaciones
 # Por ejemplo, clusterizando para Methylosmoline
@@ -131,7 +138,48 @@ data.year.wide = data.year %>%
 
 # K-means da error porque hay muchos huecos entre variables medidas en el tiempo, y huecos temporales al interior de cada variable también
 
-# TODO: ¿Se puede detectar anomalias sin tener en cuenta la variable del tiempo?
+# Clusterizacion a medida del usuario
+# TODO: mostrar la cantidad de NA que tienen las selecciones de variables,
+year_inicio   = '2014'
+mes_inicio    = '01'
+loc           = 'Kohsoom'
+
+data.kmeans = data.month.wide[data.month.wide[["location"]] == loc,]
+
+# Cantidad de nulos por variable
+filtro_na = sapply(data.kmeans, function(x) sum(is.na(x))) %>% sort
+na.permitidos = 10
+
+# Variables elegidas segun la cantidad de nulos
+variables.elegidas = names(filtro_na)[filtro_na <= na.permitidos]
+variables.elegidas = variables.elegidas[!(variables.elegidas %in% c("location", "monthyear"))]
+
+# TODO: en este momento es que el usuario deberia poder ver las variables que quedaron tras el filtro de nulos. Aca debería poder elegir a mano con las que quisiera quedarse o sacar.
+
+# Filtrando el dataset segun las variables elegidas
+data.kmeans = data.kmeans[, c("location", "monthyear", variables.elegidas)]
+
+robust.scale = TRUE
+
+# TODO: escalar las variables usando scale()
+# Escalando las variables segun su rango
+if (robust.scale) {
+  loadlib("quantable")
+  data.kmeans[, variables.elegidas] = robustscale(data.kmeans[, variables.elegidas])$data
+} else {
+  for (i in variables.elegidas) data.kmeans[[i]] = scale(data.kmeans[[i]])
+}
+
+# TODO: dejarle al usuario elegir la cantidad de clusters a probar. Se recomienda por lo menos de 2 a 10 clusters como default.
+# TODO: de los clusters que elija, mostrar gráficos de las metricas de silhouette promedio, las sumas de cuadrados entre clusters y dentro de cada cluster.
+# TODO: elegir el cluster segun la mejor metrica de silhouette promedio. No obstante, dejar al usuario cambiar la cantidad de clusters que quiere calcular, mostrando un gráfico de silhouettes por cluster para ayudarlo a decidir: lo mejor sería que pueda comparar para ver si elige alguna agrupacion que le permita un cluster bien discriminado con alto silhouette a pesar de que el silhouette promedio no sea el mejor de todos.
+# TODO: regresiones: implementar las regresiones normales, polinómicas, smoothing y regresiones robustas (ver si hay robustas más que lineales) para detección de outliers. Implementar detección de outliers de acuerdo a lo que vimos con Soria.
+
+# Resolución del problema del VAST challenge.
+# TODO: ¿Qué más se puede aportar respecto a lo que presentamos en el challenge, con relación al Methylosmoline y a cómo afecta al Pipit? Rankear las estaciones por cuenca y según la distancia a la supuesta zona de tirada de desechos.
+# TODO: Desafíos a futuro para la herramienta: lo ideal sería que se pueda seguir usando la herramienta incorporando técnicas de series de tiempo y correlación espacio-temporal entre las estaciones, por compartir la misma cuenca, el mismo parque y por la distancia a la zona donde se arrojan los desechos.
+# TODO: ¿hay algún cambio distribucional en el tiempo de los desechos? ¿Y con respecto al espacio? ¿hay alguna expansión de la marea de químicos (posiblemente el methylosmoline o altamente correlacionados con este químico) en el espacio lejos de la zona de desechos, en el tiempo?
+
 
 # Poniendo las variables como columnas, en vez de key-value
 spread.data = spread(data = data.readings, key = c("sample_date", "measure"), value = "value")
