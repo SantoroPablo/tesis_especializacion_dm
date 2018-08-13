@@ -21,6 +21,8 @@ procesar_clusters = function(dataset, clus_opt = "kmeans", rango_clus = 1:10, it
       # i          =  i + 10*(j-1) #esto es una correccion que le hago al i para que no se me sobreescriban en la lista. Esta funcion en j=2 vale 10, en j=3 vale 20 y as?
       distancias = dist(dataset, "euclidean")
       silh_list_ext[[i]] = silhouette(modelo$cluster, distancias) #guarda en una lista el silhouette
+      # fviz_silhouette(silh_list_ext[[i]], main = paste0("Silhouette de ", i, " clusters"))
+      plot(silh_list_ext[[i]], color = "blue")
       silh_avgwidth_ext[i]   = summary(silh_list_ext[[i]])[["avg.width"]] #guarda el silhouette promedio
     }
   }
@@ -30,7 +32,7 @@ procesar_clusters = function(dataset, clus_opt = "kmeans", rango_clus = 1:10, it
   }
   return(data_frame(silhouette_promedio = silh_avgwidth_ext,
                       cant_clusters = rango_clus + 1))
-  }
+}
 
 #### Variables ####
 readings = "data/Boonsong Lekagul waterways readings.csv"
@@ -152,7 +154,6 @@ data.year.wide = data.year %>%
 # K-means da error porque hay muchos huecos entre variables medidas en el tiempo, y huecos temporales al interior de cada variable también
 
 # Clusterizacion a medida del usuario
-# TODO: mostrar la cantidad de NA que tienen las selecciones de variables,
 year_inicio   = '2014'
 mes_inicio    = '01'
 loc           = 'Kohsoom'
@@ -172,10 +173,10 @@ variables.elegidas = variables.elegidas[!(variables.elegidas %in% c("location", 
 # Filtrando el dataset segun las variables elegidas
 data.kmeans = data.kmeans[, c("location", "monthyear", variables.elegidas)]
 
-robust.scale = TRUE
+# Por default, la herramienta hace un escalamiento común.
+robust.scale = FALSE
 
-# TODO: escalar las variables usando scale()
-# Escalando las variables segun su rango
+# Escalando las variables segun su rango. Puede ser un escalamiento robusto (restando mediana y dividiendo por MAD) o escalamiento estandar (restando media y dividiendo por desvio)
 if (robust.scale) {
   loadlib("quantable")
   data.kmeans[, variables.elegidas] = robustscale(data.kmeans[, variables.elegidas])$data
@@ -184,6 +185,11 @@ if (robust.scale) {
 }
 
 # TODO: dejarle al usuario elegir la cantidad de clusters a probar. Se recomienda por lo menos de 2 a 10 clusters como default.
+
+# Clusterización: el usuario puede hacerla a su medida.
+# Por default, se prueba de 2 a 10 clusters
+cant.clusters.prueba = 1:9
+
 # TODO: de los clusters que elija, mostrar gráficos de las metricas de silhouette promedio, las sumas de cuadrados entre clusters y dentro de cada cluster.
 # TODO: elegir el cluster segun la mejor metrica de silhouette promedio. No obstante, dejar al usuario cambiar la cantidad de clusters que quiere calcular, mostrando un gráfico de silhouettes por cluster para ayudarlo a decidir: lo mejor sería que pueda comparar para ver si elige alguna agrupacion que le permita un cluster bien discriminado con alto silhouette a pesar de que el silhouette promedio no sea el mejor de todos.
 # TODO: regresiones: implementar las regresiones normales, polinómicas, smoothing y regresiones robustas (ver si hay robustas más que lineales) para detección de outliers. Implementar detección de outliers de acuerdo a lo que vimos con Soria.
