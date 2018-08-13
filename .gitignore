@@ -8,3 +8,5 @@
 *.sw*
 data/*
 functions/*
+*.synctex*
+*.toc
