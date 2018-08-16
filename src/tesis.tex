@@ -11,8 +11,19 @@
 \section{Introducción}
 Este trabajo es la continuacion de la presentación del trabajo presentado para el VAST Challenge 2018 (Mini Challenge 2) por parte del equipo de Juan Pablo Pilorget, Rubén Flecha y Pablo Santoro de la Maestría en Minería de Datos de la Universidad de Buenos Aires, como trabajo final de la materia de Visualización de la Información. En el siguiente trabajo contaré en qué consistió la problemática a resolver como parte del VAST Challenge, la visualización propuesta como parte de la solución a la problemática hallada en el trabajo presentado, la mejora a la solución presentada y los desafíos a futuro para enriquecer la herramienta.
 \section{Problemática}
+La problemática planteada por el Mini Challenge es el decrecimiento de la población de pájaros Pipit en la reserva Boonsong Lekagul. Se sospecha que las causas yacen en el vertido en tierra de químicos que pudieran afectar la salud del pájaro en un sector del parque, del cual no se tienen muestras de tierra debido a que fue removida recientemente pero se sospecha de que varios de los químicos pudieran haber alcanzado las vías fluviales que atraviesan el parque. En base a esto, se tienen registros de varias mediciones hechas en distintos puntos (estaciones de medición) sobre los ríos.
+% TODO: agregar el link en el pie de página a la página que narra la problemática del mini challenge 2 del VAST
+\section{Datos}
+Los datos que se poseen sobre mediciones son los siguientes:
+* id: clave única para identificar una medición.
+* value: valor de la medición.
+* unit: unidad de medida de la medición
+* measure: métrica tomada. 106 mediciones distintas registradas.
+* sample_date: fecha con precisión hasta el día de la toma de una medición.
+* location: lugar donde fue tomada la métrica: 10 lugares (estaciones de medición) distintos donde se toman las mediciones.
 % Contar el problema según es planteado por el VAST challenge
 \section{Métodos}
+Los métodos usados son visualizaciones sobre distintas técnicas de datos para ayudar a buscar evidencia de anomalías en los datos que pudieran dar indicios a químicos 
 % Uso de R como base para el trabajo
 \section{Problemas en el muestreo}
 % TODO: mostrar los graficos de deficiencias en el muestreo de la siguiente manera:
