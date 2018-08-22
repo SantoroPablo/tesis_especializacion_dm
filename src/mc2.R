@@ -12,8 +12,14 @@ rm('i', 'libraries')
 #### Functions ####
 procesar_clusters = function(dataset, clus_opt = "kmeans", rango_clus = 1:10, iter_max = 50) {
   if (clus_opt == "kmeans") {
+    # Variables
     silh_list_ext = list()
     silh_avgwidth_ext = array()
+    SCD=numeric(length = length(rango_clus))
+    SCE=numeric(length = length(rango_clus))
+
+    # Calculando clusters
+    message("Calculando clusters")
     for (i in rango_clus) {
       print(i) #esto es para ir monitoreando el avance cuando corre
       modelo = kmeans(dataset, centers = i + 1, algorithm = "MacQueen",
@@ -21,17 +27,35 @@ procesar_clusters = function(dataset, clus_opt = "kmeans", rango_clus = 1:10, it
       # i          =  i + 10*(j-1) #esto es una correccion que le hago al i para que no se me sobreescriban en la lista. Esta funcion en j=2 vale 10, en j=3 vale 20 y as?
       distancias = dist(dataset, "euclidean")
       silh_list_ext[[i]] = silhouette(modelo$cluster, distancias) #guarda en una lista el silhouette
-      # fviz_silhouette(silh_list_ext[[i]], main = paste0("Silhouette de ", i, " clusters"))
-      plot(silh_list_ext[[i]], col = "blue")
+      SCD[i]=sum(modelo$withinss)
+      SCE[i]=sum(modelo$betweenss)
+
+      # Ploteo del silhouette de los clusters
+      fviz_silhouette(silh_list_ext[[i]], main = paste0("Silhouette de ", i, " clusters"))
+
       silh_avgwidth_ext[i]   = summary(silh_list_ext[[i]])[["avg.width"]] #guarda el silhouette promedio
     }
-  }
-  else {
+
+    # Ploteo de la suma de cuadrados dentro y entre clusters como grafico de codo.
+    plot(x=rango_clus+1,
+         y=SCD,
+         type="b",
+         main="Suma de cuadrados dentro de los clusters",
+         ylab="Suma de cuadrados",
+         xlab="Cantidad de clusters")
+    plot(x=rango_clus+1,
+         y=SCE,
+         type="b",
+         main="Suma de cuadrados entre clusters",
+         ylab="Suma de cuadrados",
+         xlab="Cantidad de clusters")
+    silh_clus = data.frame(silhouette_promedio = silh_avgwidth_ext,
+                           cant_clusters = rango_clus+1)
+    return(list(silh_clus,SCD,SCE))
+  } else {
     stop("Por ahora solo kmeans es el unico algoritmo implementado")
     return(-1)
   }
-  return(data_frame(silhouette_promedio = silh_avgwidth_ext,
-                      cant_clusters = rango_clus + 1))
 }
 
 #### Variables ####
