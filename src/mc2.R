@@ -214,11 +214,37 @@ if (robust.scale) {
 # Por default, se prueba de 2 a 10 clusters
 cant.clusters.prueba = 1:9
 
-# TODO: La funcion de procesar clusters muestra grafico de silhouette por cluster. Faltan las sumas de cuadrados entre clusters y dentro de cada cluster.
-# TODO: elegir el cluster segun la mejor metrica de silhouette promedio. No obstante, dejar al usuario cambiar la cantidad de clusters que quiere calcular, mostrando un gráfico de silhouettes por cluster para ayudarlo a decidir: lo mejor sería que pueda comparar para ver si elige alguna agrupacion que le permita un cluster bien discriminado con alto silhouette a pesar de que el silhouette promedio no sea el mejor de todos.
+# TODO: elegir el cluster segun la mejor metrica de silhouette promedio. No obstante, dejar al usuario cambiar la cantidad de clusters que quiere calcular, mostrando un gráfico de silhouettes por cluster para ayudarlo a decidir: lo mejor sería que pueda comparar para ver si elige alguna agrupacion que le permita un cluster bien discriminado con alto silhouette a pesar de que el silhouette promedio no sea el mejor de todos. Agregar metricas de validacion de clusters, quiza tambien el r score.
+
 # TODO: regresiones: implementar las regresiones normales, polinómicas, smoothing y regresiones robustas (ver si hay robustas más que lineales del mismo orden que las anteriores) para detección de outliers. Implementar detección de outliers de acuerdo a lo que vimos con Soria. Tambien si el usuario quiere armar alguna imputacion de nulos a partir de los datos que se tienen.
 
+# Ver con boxplots (ya existentes) e histogramas la forma de detección de outliers
+data.methyl.kohsoom = data.readings %>%
+  filter(sample_date >= ymd(paste(year_inicio,mes_inicio,"01")),
+         location=="Kohsoom",
+         measure=="Methylosmoline") %>%
+  select(sample_date, value)
+
+cortes = 20 # También podría ser un string de los metodos validos de corte para la función hist.
+hist(data.methyl.kohsoom[["value"]], breaks = 20)
+
+# Ver con regresiones la detección de outliers. Ver si se pueden fittear modelos no paramétricos, como splines.
+
+# Regresion robusta lineal
+reg.lin.rob.mod=robust::lmRob(data=data.methyl.kohsoom,formula=value~sample_date)
+
+# Spline
+spline.mod=spline(x=data.methyl.kohsoom[["sample_date"]],y=data.methyl.kohsoom[["value"]])
+
+# Regresion polinomial
+# Pruebo regresion cubica frente al tiempo
+reg.pol1=lm(data = data.methyl.kohsoom)
+
+plot(data=data.methyl.kohsoom,
+     value~sample_date,
+     type="b")
+
 # Resolución del problema del VAST challenge.
-# TODO: ¿Qué más se puede aportar respecto a lo que presentamos en el challenge, con relación al Methylosmoline y a cómo afecta al Pipit? Rankear las estaciones por cuenca y según la distancia a la supuesta zona de tirada de desechos.
+# TODO: ¿Qué más se puede aportar respecto a lo que presentamos en el challenge, con relación al Methylosmoline y a cómo afecta a la especie de pajaro en peligro de la reserva? Rankear las estaciones por cuenca y según la distancia a la supuesta zona de tirada de desechos.
 # TODO: Desafíos a futuro para la herramienta: lo ideal sería que se pueda seguir usando la herramienta incorporando técnicas de series de tiempo y correlación espacio-temporal entre las estaciones, por compartir la misma cuenca, el mismo parque y por la distancia a la zona donde se arrojan los desechos. Con la informacion obtenida, posiblemente se pueda remuestrear para corregir la frecuencia de las variables.
 # TODO: ¿hay algún cambio distribucional en el tiempo de los desechos? ¿Y con respecto a las coordenadas espaciales? ¿hay alguna expansión de la marea de químicos (posiblemente el methylosmoline o altamente correlacionados con este químico) en el espacio lejos de la zona de desechos, en el tiempo?

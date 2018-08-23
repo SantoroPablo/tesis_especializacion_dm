@@ -2,25 +2,33 @@
 \author{Pablo Santoro}
 \usepackage[spanish]{babel}
 \usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
 \title{Trabajo de especialización - Maestría en minería de Datos - Universidad de Buenos Aires}
 \begin{document}
 \maketitle
+\begin{abstract}
+En el siguiente trabajo proponemos una aplicación para poder resolver el Mini Challenge 2 del VAST Challenge 2018, el cual consta de ver la relación espacio-temporal de diversas dimensiones medidas sobre cuencas fluviales. La aplicación ayuda a detectar problemas de muestreo y outliers de forma visual, usando diversas visualizaciones y analísis, usando clusters y regresiones robustas para poder permitir al usuario detectar visualmente patrones fuera de lo normal de las variables. El uso particular de la aplicación para el VAST Challenge, Mini Challenge 2 es el detectar si hay alguna relacion entre los químicos y otras mediciones hechas en las vias fluviales que indiquen la presencia de tóxicos que afecten la vida de la especie de pájaros \emph{Anthus} que habita en la reserva.
+\end{abstract}
 \newpage
 \tableofcontents
 \newpage
 \section{Introducción}
-Este trabajo es la continuacion de la presentación del trabajo presentado para el VAST Challenge 2018 (Mini Challenge 2) por parte del equipo de Juan Pablo Pilorget, Rubén Flecha y Pablo Santoro de la Maestría en Minería de Datos de la Universidad de Buenos Aires, como trabajo final de la materia de Visualización de la Información. En el siguiente trabajo contaré en qué consistió la problemática a resolver como parte del VAST Challenge, la visualización propuesta como parte de la solución a la problemática hallada en el trabajo presentado, la mejora a la solución presentada y los desafíos a futuro para enriquecer la herramienta.
-\section{Problemática}
-La problemática planteada por el Mini Challenge es el decrecimiento de la población de pájaros Pipit en la reserva Boonsong Lekagul. Se sospecha que las causas yacen en el vertido en tierra de químicos que pudieran afectar la salud del pájaro en un sector del parque, del cual no se tienen muestras de tierra debido a que fue removida recientemente pero se sospecha de que varios de los químicos pudieran haber alcanzado las vías fluviales que atraviesan el parque. En base a esto, se tienen registros de varias mediciones hechas en distintos puntos (estaciones de medición) sobre los ríos.
+Este trabajo es la continuacion de la presentación del trabajo presentado para el VAST Challenge 2018 (Mini Challenge 2)\footnote{https://vacommunity.org/VAST+Challenge+2018+MC2} por parte del equipo de Juan Pablo Pilorget, Rubén Flecha y Pablo Santoro de la Maestría en Minería de Datos de la Universidad de Buenos Aires, como trabajo final de la materia de Visualización de la Información. 
+En el siguiente trabajo contaré en qué consistió la problemática a resolver como parte del VAST Challenge, la visualización propuesta como parte de la solución a la problemática hallada en el trabajo presentado, la mejora a la solución presentada y los desafíos a futuro para enriquecer la herramienta.
+Las herramientas inmediatas actualmente disponibles no permiten una rápida identificación de anomalías y/o valores atípicos en los datos, especialmente cuando los datos tienen la forma de series de tiempo. Este trabajo propone una nueva herramienta para tratar este problema de una manera sencilla y orientada a resolver el problema del VAST Mini Challenge 2, 2018: dilucidar los problemas del vertido de químicos en la zona la reserva Boonsong Lekagul que están afectando la salud de la especie de pájaros \emph{Anthus}.
+Las técnicas que estaré usando son clusters, usando el algoritmo k-means y regresiones robustas
 % TODO: agregar el link en el pie de página a la página que narra la problemática del mini challenge 2 del VAST
 \section{Datos}
-Los datos que se poseen sobre mediciones son los siguientes:
-* id: clave única para identificar una medición.
-* value: valor de la medición.
-* unit: unidad de medida de la medición
-* measure: métrica tomada. 106 mediciones distintas registradas.
-* sample_date: fecha con precisión hasta el día de la toma de una medición.
-* location: lugar donde fue tomada la métrica: 10 lugares (estaciones de medición) distintos donde se toman las mediciones.
+Los datos que se poseen sobre mediciones están dados en pares métrica-valor en el tiempo y el espacio, ordenados en los siguientes campos:
+\begin{itemize}
+\item id: clave única para identificar una medición.
+\item value: valor de la medición.
+\item unit: unidad de medida de la medición
+\item measure: métrica tomada. 106 mediciones distintas registradas.
+\item sample\_date: fecha con precisión hasta el día de la toma de una medición.
+\item location: lugar donde fue tomada la métrica: 10 lugares (estaciones de medición) distintos donde se toman las mediciones.
+\end{itemize}
+Estos datos se presentan en un formato \emph{tidy}
 % Contar el problema según es planteado por el VAST challenge
 \section{Métodos}
 Los métodos usados son visualizaciones sobre distintas técnicas de datos para ayudar a buscar evidencia de anomalías en los datos que pudieran dar indicios a químicos 
